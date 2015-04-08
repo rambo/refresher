@@ -4,10 +4,13 @@
 from __future__ import with_statement
 from __future__ import print_function
 import functools
+import logging
 import yaml
 from tornado.ioloop import IOLoop, PeriodicCallback
 from tornado import gen
+from tornado.httpclient import AsyncHTTPClient
 
+LOGLEVEL = logging.INFO
 
 class controller(object):
     config = {}
@@ -69,16 +72,25 @@ class controller(object):
 
     def create_pcb(self, interval, url):
         """Calls the callback immediately and then schedules a PeriodicCallback for it with given interval"""
-        #print("create_pcb for %s called (interval %s), current time %s" % (url, interval, self.mainloop.time()))
+        logging.debug("create_pcb for %s called (interval %s), current time %s" % (url, interval, self.mainloop.time()))
         callback = functools.partial(self.fetcher, url)
         self.mainloop.spawn_callback(callback)
         pcb = PeriodicCallback(callback, int(interval*1000))
         pcb.start()
         self.pcbs.append(pcb)
 
+    @gen.coroutine
     def fetcher(self, url):
         """Asynchronously fetches the URL"""
-        print("Fetcher for %s called, current time %s" % (url, self.mainloop.time()))
+        logging.debug("Fetcher for %s called, current time %s" % (url, self.mainloop.time()))
+        try:
+            response = yield AsyncHTTPClient().fetch(url, request_timeout=self.config['http_timeout'])
+            if response.error:
+                logging.warning("Got exception %s when fetching %s" % (response.error, url))
+            else:
+                logging.info("Fetched %s in %s seconds" % (url, response.request_time))
+        except Exception, e:
+            logging.exception(e)
         pass
 
 
@@ -88,6 +100,7 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         print("Usage: refresher_daemon.py config.yml")
         sys.exit(1)
+    logging.basicConfig(level=LOGLEVEL, stream=sys.stdout)
     loop = IOLoop.instance()
     instance = controller(sys.argv[1], loop)
     instance.hook_signals()
