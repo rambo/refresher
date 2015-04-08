@@ -1,0 +1,6 @@
+#default_interval: 300 # in seconds
+default_interval: 5 # in seconds
+urllists:
+  - file: refresh_urls.txt
+    # Optional interval for each file
+#    interval: 60
