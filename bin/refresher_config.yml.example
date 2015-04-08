@@ -1,3 +1,4 @@
+log_level: 20 # logging.INFO, see https://docs.python.org/2/library/logging.html#logging-levels
 http_timeout: 30 # seconds
 batch_size: 20 # How many urls to process in a "batch"
 stagger_time: 2.5 # How many seconds apart the batchs should be (NOTE: this is all async IO and coroutines so exact timing kinda depends on stuff)

@@ -38,6 +38,7 @@ class controller(object):
         
         with open(self.config_file) as f:
             self.config = yaml.load(f)
+        logging.getLogger().setLevel(self.config['log_level'])
 
         for listinfo in self.config['urllists']:
             interval = self.config['default_interval']
