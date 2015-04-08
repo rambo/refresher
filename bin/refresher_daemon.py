@@ -36,8 +36,6 @@ class controller(object):
         with open(self.config_file) as f:
             self.config = yaml.load(f)
 
-        print("Config: %s" % repr(self.config))
-
         for listinfo in self.config['urllists']:
             interval = self.config['default_interval']
             if listinfo.has_key('interval'):
@@ -51,10 +49,17 @@ class controller(object):
             else:
                 urls = listinfo['urls']
             
+            batch_no = 0
+            i = 0
             for url in urls:
-                pcb = PeriodicCallback(functools.partial(self.fetcher, url) ,int(interval*1000))
-                pcb.start()
-                self.pcbs.append(pcb)
+                # Skip empty ones
+                if not url:
+                    continue
+                delay = batch_no * self.config['stagger_time']
+                self.mainloop.call_later(delay, functools.partial(self.create_pcb, interval, url))
+                i += 1
+                if ((i % self.config['batch_size']) == 0):
+                    batch_no += 1
 
     def quit(self, *args):
         self.mainloop.stop()
@@ -62,10 +67,21 @@ class controller(object):
     def run(self):
         self.mainloop.start()
 
+    def create_pcb(self, interval, url):
+        """Calls the callback immediately and then schedules a PeriodicCallback for it with given interval"""
+        #print("create_pcb for %s called (interval %s), current time %s" % (url, interval, self.mainloop.time()))
+        callback = functools.partial(self.fetcher, url)
+        self.mainloop.spawn_callback(callback)
+        pcb = PeriodicCallback(callback, int(interval*1000))
+        pcb.start()
+        self.pcbs.append(pcb)
 
     def fetcher(self, url):
-        print("Fetcher for %s called" % url)
+        """Asynchronously fetches the URL"""
+        print("Fetcher for %s called, current time %s" % (url, self.mainloop.time()))
         pass
+
+
 
 if __name__ == '__main__':
     import sys

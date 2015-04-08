@@ -1,5 +1,6 @@
-#default_interval: 300 # in seconds
-default_interval: 5 # in seconds
+batch_size: 20 # How many urls to process in a "batch"
+stagger_time: 2.5 # How many seconds apart the batchs should be (NOTE: this is all async IO and coroutines so exact timing kinda depends on stuff)
+default_interval: 300 # in seconds
 urllists:
   - file: refresh_urls.txt
     # Optional interval for each file
