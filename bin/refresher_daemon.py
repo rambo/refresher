@@ -39,6 +39,8 @@ class controller(object):
         with open(self.config_file) as f:
             self.config = yaml.load(f)
         logging.getLogger().setLevel(self.config['log_level'])
+        # Allow 1.5 times batch_size clients in the AsyncHTTPClient backend
+        AsyncHTTPClient.configure(None, max_clients=int(self.config['batch_size']*1.5))
 
         for listinfo in self.config['urllists']:
             interval = self.config['default_interval']
@@ -58,6 +60,9 @@ class controller(object):
             for url in urls:
                 # Skip empty ones
                 if not url:
+                    continue
+                # Also skip "commented out" lines
+                if url.startswith('#'):
                     continue
                 delay = batch_no * self.config['stagger_time']
                 self.mainloop.call_later(delay, functools.partial(self.create_pcb, interval, url))
@@ -101,6 +106,7 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         print("Usage: refresher_daemon.py config.yml")
         sys.exit(1)
+    # TODO: add a bsic formatter that gives timestamps etc
     logging.basicConfig(level=LOGLEVEL, stream=sys.stdout)
     loop = IOLoop.instance()
     instance = controller(sys.argv[1], loop)
