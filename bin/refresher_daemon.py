@@ -8,7 +8,7 @@ import logging
 import yaml
 from tornado.ioloop import IOLoop, PeriodicCallback
 from tornado import gen
-from tornado.httpclient import AsyncHTTPClient
+from tornado.httpclient import AsyncHTTPClient, HTTPError
 
 LOGLEVEL = logging.INFO
 
@@ -92,11 +92,14 @@ class controller(object):
         try:
             response = yield AsyncHTTPClient().fetch(url, request_timeout=self.config['http_timeout'])
             if response.error:
-                logging.warning("Got exception %s when fetching %s" % (response.error, url))
+                logging.warning("Got error %s when fetching %s" % (response.error, url))
             else:
                 logging.info("Fetched %s in %s seconds" % (url, response.request_time))
+        except HTTPError, e:
+            logging.warning("Got error %s when fetching %s" % (e.status_code, url))
         except Exception, e:
-            logging.exception(e)
+            #logging.error("Got exception when fetching %s" % (url))
+            logging.exception("Got exception when fetching %s" % (url), e)
         pass
 
 
@@ -107,7 +110,7 @@ if __name__ == '__main__':
         print("Usage: refresher_daemon.py config.yml")
         sys.exit(1)
     # TODO: add a bsic formatter that gives timestamps etc
-    logging.basicConfig(level=LOGLEVEL, stream=sys.stdout)
+    logging.basicConfig(level=LOGLEVEL, stream=sys.stdout, format='%(asctime)s %(levelname)s %(name)s %(message)s')
     loop = IOLoop.instance()
     instance = controller(sys.argv[1], loop)
     instance.hook_signals()
