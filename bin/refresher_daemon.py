@@ -96,7 +96,7 @@ class controller(object):
             else:
                 logging.info("Fetched %s in %s seconds" % (url, response.request_time))
         except HTTPError, e:
-            logging.warning("Got error %s when fetching %s" % (e.status_code, url))
+            logging.warning("Got error %s when fetching %s" % (e.code, url))
         except Exception, e:
             #logging.error("Got exception when fetching %s" % (url))
             logging.exception("Got exception when fetching %s" % (url), e)
